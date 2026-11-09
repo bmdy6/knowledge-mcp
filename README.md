@@ -101,6 +101,8 @@ startup_timeout_sec = 60
 
 参数见 [MCP 契约](docs/MCP_CONTRACT.md)。新建文档固定为 `review`；删除、合并和移动也会改动文件。
 
+搜索遇到损坏或不可读笔记时仍返回健康命中，并在列表末尾追加 `{warning, partial: true, skipped}`。调用方应先区分 `warning` 诊断和普通命中，不能把它当作有 `path`、行号的结果；零命中时也可能只是部分搜索。
+
 ## 选项
 
 | 选项 | 用途 |
@@ -115,11 +117,13 @@ startup_timeout_sec = 60
 
 **写入有什么保护？** `expected_text` 是局部文本条件，须在当前文件恰好出现一次；先看 diff 再提交修改。绝对路径、`..` 和跨 scope 文档路径会被拒绝，归档不可直接写入；scope 是文档边界，不能替代操作系统权限。详见[写入安全](docs/WRITE_SAFETY.md)。
 
+同一 vault 的 MCP 写入在 macOS/Linux/Windows 上使用跨进程锁，等待超过 10 秒会报告繁忙。根目录会保留 `.knowledge-mcp.lock`，运行时不要删除，可加入知识库自己的 `.gitignore`。锁不能协调外部编辑器或同步器，网络文件系统也未验证；操作这些工具时应暂停 MCP 写入。
+
 **支持语义检索吗？** 目前只有关键词检索（中文二元组 + BM25），没有向量检索，也不需要 embedding 服务。内容和检索结果仍需人工核实。
 
 ## 参与贡献
 
-先提 Issue 说明问题；本地安装开发依赖后运行 `uv run pytest -q`。CI 覆盖 Ubuntu、macOS 和 Python 3.10、3.13。
+先提 Issue 说明问题；本地安装开发依赖后运行 `uv run pytest -q`。CI 覆盖 Ubuntu、macOS、Windows 和 Python 3.10、3.13。
 
 ## 许可证
 

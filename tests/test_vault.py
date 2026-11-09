@@ -30,6 +30,39 @@ def vault_root(tmp_path: Path) -> Path:
     return tmp_path
 
 
+def test_search_skips_bad_yaml_with_a_sanitized_partial_warning(vault_root: Path) -> None:
+    (vault_root / "personal/broken.md").write_text(
+        "---\ntitle: [private-marker\nscope: personal\n---\n# Broken\n",
+        encoding="utf-8",
+    )
+    with pytest.warns(RuntimeWarning, match="Partial search") as warnings:
+        results = Vault(vault_root).search("personal", "secretword")
+    assert [result.path for result in results] == ["personal/note.md"]
+    diagnostic = str(warnings[0].message)
+    assert "personal/broken.md" in diagnostic
+    assert "invalid-frontmatter" in diagnostic
+    assert "private-marker" not in diagnostic
+    assert str(vault_root) not in diagnostic
+
+
+def test_search_reports_unreadable_notes_and_uses_one_snapshot(vault_root: Path, monkeypatch) -> None:
+    (vault_root / "personal/unreadable.md").write_bytes(b"\xff\xfe")
+    original_read = Path.read_text
+    reads = []
+
+    def read_once(path, *args, **kwargs):
+        if path.name == "note.md":
+            assert path not in reads, "search must quote the same read it ranked"
+            reads.append(path)
+        return original_read(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", read_once)
+    diagnostics = []
+    results = Vault(vault_root).search("personal", "secretword", diagnostics=diagnostics)
+    assert [result.path for result in results] == ["personal/note.md"]
+    assert diagnostics == [{"path": "personal/unreadable.md", "code": "unreadable-document"}]
+
+
 def test_search_ranks_title_and_content_above_index_pages(
     vault_root: Path,
 ) -> None:

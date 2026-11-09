@@ -25,6 +25,8 @@
 
 搜索结果含 `scope`、`path`、`line_start`、`line_end`、`title`、`snippet`，行号从 1 开始。检索正文和 frontmatter 中的 title、series、tags，返回原始位置；状态等管理字段不作为普通关键词。
 
+遇到 YAML 损坏或不可读文件时，搜索继续返回健康笔记的命中，并在返回列表末尾追加一个诊断记录：`{warning, partial: true, skipped: [{path, code}]}`。调用方必须先判断是否含 `warning`，不能把诊断当作有行号的命中；`limit` 只限制命中数量。即使没有命中，也会返回该诊断，不能把它解释为完整搜索后没有结果。`code` 为 `invalid-frontmatter` 或 `unreadable-document`，只带相对路径，不包含笔记原文或解析异常。正常搜索的列表结构不变；`validate_vault` 可辅助定位并修复笔记后重新搜索。
+
 BM25 综合词频与文档长度，中文按二元组匹配，标题和英文技术词加权，导航页降权。结果定位到文档中选中的命中章节，不保证是首个字面命中；用 `read_range` 核实上下文。搜索默认排除 archive，开启后仍排除显式声明另一 scope 的归档。未声明 scope 的旧归档可能在两个 scope 的归档搜索中出现。
 
 `read` 返回完整文本。`read_range` 返回 `scope`、`path`、`start_line`、`end_line`、`lines`；每条 line 含 `line` 和 `text`。起始行越界或行区间无效时报错，结束行超过文件末尾则截到末尾。
@@ -32,6 +34,10 @@ BM25 综合词频与文档长度，中文按二元组匹配，标题和英文技
 ## 写入
 
 `show_diff` 返回 `path`、`before`、`after`、`diff`，只预览不写入。`apply_change` 重新检查 `expected_text` 在当前文件中恰好出现一次，再局部替换并返回 `path`、`content`。预览与提交之间有人改动匹配片段，写入会拒绝；其他片段的变更不被覆盖。它不接受文件版本号。
+
+同一个本地 vault 的 MCP 写入操作共用跨进程锁：取得锁后才读取当前原文和校验，直到替换、移动或删除完成后释放。并发修改不同片段会依次基于最新内容应用；完整原文已过期则拒绝写入。等待超过 10 秒返回 `VaultBusyError`，异常或进程退出会释放锁。锁在 vault 根创建隐藏文件 `.knowledge-mcp.lock`，不参与 Markdown 搜索，也不包含笔记内容；运行期间不要删除它，可加入知识库自己的 `.gitignore`。
+
+锁支持 macOS/Linux 和 Windows，仅协调使用此 MCP 的进程。手工编辑器、Git、云盘同步或其他直接写文件的程序不遵守此锁，不能保证与它们并发修改时不冲突；网络文件系统的锁语义未验证。需要这些操作时应暂停 MCP 写入。锁不使多文件合并成为可回滚事务，仍需备份。
 
 新文档固定写 `status: review`，正文不带 frontmatter 或一级标题。来源去重、任务章节、可选导入日期等约束见 [内容模型](CONTENT_MODEL.md)。创建不覆盖已有文件。
 
@@ -60,6 +66,7 @@ BM25 综合词频与文档长度，中文按二元组匹配，标题和英文技
 | `DocumentNotFoundError` | 先 list 或 search |
 | `ArchiveAccessError` | 确认需要历史材料后显式开启归档 |
 | `VersionConflictError` | 重读当前内容，再生成 diff |
+| `VaultBusyError` | 等其他写入结束后重试；不要删除锁文件 |
 | `AmbiguousChangeError` | 扩大原文上下文，使匹配唯一 |
 | `DocumentExistsError` | 读取已有文档，不覆盖 |
 | `DuplicateSourceError` | 更新已认领来源的文档 |
