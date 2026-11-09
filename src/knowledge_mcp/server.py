@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 from mcp.server.fastmcp.utilities.func_metadata import ArgModelBase
 from pydantic import ConfigDict
 
@@ -26,6 +27,13 @@ ArgModelBase.model_config = ConfigDict(
 
 mcp = FastMCP("knowledge-mcp")
 
+# 工具注解：告诉客户端哪些工具只读。非交互客户端（如 Codex exec）会自动放行只读工具，
+# 写入类工具仍需确认。写入都限制在知识库内，并且有内容校验，所以都不是 openWorld。
+READ = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+CREATE = ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False)
+EDIT = ToolAnnotations(readOnlyHint=False, destructiveHint=True, idempotentHint=False, openWorldHint=False)
+DELETE = ToolAnnotations(readOnlyHint=False, destructiveHint=True, idempotentHint=True, openWorldHint=False)
+
 
 def get_vault() -> Vault:
     root = os.environ.get("KNOWLEDGE_VAULT", "").strip()
@@ -40,7 +48,7 @@ def get_resources() -> RepositoryResources:
 
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ)
 def search(
     scope: str,
     query: str,
@@ -56,7 +64,7 @@ def search(
     ]
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ)
 def list_documents(
     scope: str,
     prefix: str = "",
@@ -68,7 +76,7 @@ def list_documents(
     )
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ)
 def validate_vault(
     scope: str | None = None,
     include_archive: bool = False,
@@ -83,13 +91,13 @@ def validate_vault(
     ]
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ)
 def read(scope: str, path: str, include_archive: bool = False) -> str:
     """Read one Markdown document from the selected scope."""
     return get_vault().read(scope, path, include_archive=include_archive)
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ)
 def read_range(
     scope: str,
     path: str,
@@ -107,7 +115,7 @@ def read_range(
     )
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ)
 def show_diff(
     scope: str,
     path: str,
@@ -127,7 +135,7 @@ def show_diff(
     return change
 
 
-@mcp.tool()
+@mcp.tool(annotations=EDIT)
 def apply_change(
     scope: str,
     path: str,
@@ -147,7 +155,7 @@ def apply_change(
     )
 
 
-@mcp.tool()
+@mcp.tool(annotations=CREATE)
 def create_document(
     scope: str,
     path: str,
@@ -203,7 +211,7 @@ def create_document(
     )
 
 
-@mcp.tool()
+@mcp.tool(annotations=DELETE)
 def delete_document(
     scope: str,
     path: str,
@@ -220,7 +228,7 @@ def delete_document(
     return get_vault().delete_document(scope, path, successor=successor)
 
 
-@mcp.tool()
+@mcp.tool(annotations=EDIT)
 def move_document(scope: str, path: str, new_path: str) -> dict[str, str]:
     """Move or rename one document within its scope; content is unchanged.
 

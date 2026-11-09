@@ -46,6 +46,12 @@ async def _assert_stdio_contract(root: Path) -> None:
             tool_names = {tool.name for tool in tools.tools}
             assert {"search", "read", "validate_vault", "create_document", "move_document"} <= tool_names
             assert "record_daily_note" not in tool_names
+            by_name = {tool.name: tool for tool in tools.tools}
+            for name in ("search", "list_documents", "validate_vault", "read", "read_range", "show_diff"):
+                assert by_name[name].annotations.readOnlyHint is True, name
+            for name in ("create_document", "apply_change", "move_document", "delete_document"):
+                assert by_name[name].annotations.readOnlyHint is False, name
+            assert by_name["delete_document"].annotations.destructiveHint is True
             create_schema = next(t for t in tools.tools if t.name == "create_document").inputSchema
             assert "replaces" in create_schema.get("properties", {})
 
