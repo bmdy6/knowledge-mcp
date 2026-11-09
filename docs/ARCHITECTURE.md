@@ -7,7 +7,7 @@ Markdown 是唯一知识源，MCP 提供按 scope 的检索和维护接口，Git
 - 程序代码和知识内容分开：启动时用 `--vault <路径>` 或 `KNOWLEDGE_VAULT` 指定知识库，无默认目录。
 - `personal/` 与 `company/` 分别承载两个 scope；每次检索、读取和写入都显式选择 scope。
 - `archive/` 保存历史材料，默认不参与检索；显式 `include_archive=true` 才能读取，仍按文档声明的 scope 过滤。归档文档应声明 scope，未声明的旧归档可在两个 scope 的显式归档查询中出现。
-- 写入只允许 `personal/` 或 `company/` 内的 Markdown 文件，不写归档。
+- 文档写入只允许 `personal/` 或 `company/` 内的 Markdown 文件，不写归档；根目录的隐藏 `.knowledge-mcp.lock` 仅用于本地跨进程写入互斥，不保存知识内容。
 - 检索返回文件路径、真实行号和原文片段。排序使用 BM25、标题和技术词权重，不需要向量服务。
 - 新文档固定为 `status: review`；状态不能代替读者对原文的核实。
 

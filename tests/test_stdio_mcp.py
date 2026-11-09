@@ -1,10 +1,65 @@
 import asyncio
+import json
 import os
 from pathlib import Path
 import sys
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+
+
+def test_search_returns_healthy_matches_and_visible_partial_diagnostic(tmp_path: Path) -> None:
+    (tmp_path / "personal").mkdir()
+    (tmp_path / "personal/healthy.md").write_text("# Healthy\nquestion\n", encoding="utf-8")
+    (tmp_path / "personal/broken.md").write_text(
+        "---\ntitle: [private-marker\n---\n", encoding="utf-8"
+    )
+    asyncio.run(_assert_partial_search(tmp_path))
+
+
+async def _assert_partial_search(root: Path) -> None:
+    parameters = StdioServerParameters(
+        command=sys.executable,
+        args=["-m", "knowledge_mcp.server", "--vault", str(root)],
+        env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src")},
+    )
+    async with stdio_client(parameters) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            for query in ("question", "no-match"):
+                response = await session.call_tool("search", {"scope": "personal", "query": query})
+                assert not response.isError
+                entries = response.structuredContent["result"]
+                diagnostic = entries[-1]
+                assert diagnostic["partial"] is True
+                assert "Partial search" in diagnostic["warning"]
+                assert diagnostic["skipped"] == [{"path": "personal/broken.md", "code": "invalid-frontmatter"}]
+                content = "\n".join(item.text for item in response.content)
+                assert "Partial search" in content
+                assert "private-marker" not in content
+                assert str(root) not in content
+                assert json.loads(response.content[-1].text) == diagnostic
+                matches = entries[:-1]
+                if query == "question":
+                    assert [match["path"] for match in matches] == ["personal/healthy.md"]
+                    match = matches[0]
+                    source = await session.call_tool("read_range", {
+                        "scope": "personal", "path": match["path"],
+                        "start_line": match["line_start"], "end_line": match["line_end"],
+                    })
+                    assert not source.isError
+                    assert "question" in str(source.structuredContent)
+                else:
+                    assert matches == []
+            (root / "personal/broken.md").unlink()
+            healthy = await session.call_tool("search", {"scope": "personal", "query": "question"})
+            assert not healthy.isError
+            assert [entry["path"] for entry in healthy.structuredContent["result"]] == ["personal/healthy.md"]
+            assert len(healthy.content) == 1
+            empty = await session.call_tool("search", {"scope": "personal", "query": "no-match"})
+            assert empty.structuredContent == {"result": []}
+            assert empty.content == []
+    assert not (root / ".knowledge-mcp.lock").exists()
 
 
 def test_stdio_exposes_tools_resources_and_validation(tmp_path: Path) -> None:

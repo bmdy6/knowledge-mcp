@@ -101,6 +101,8 @@ Read `knowledge://guide` after connecting. See the [client guide](docs/CLIENT_CO
 
 See the [MCP contract](docs/MCP_CONTRACT.md) for arguments. New documents start as `review`; deletion, merging and moving also change files.
 
+When a note is malformed or unreadable, search returns healthy matches followed by a `{warning, partial: true, skipped}` diagnostic. Callers must distinguish records containing `warning` from matches with paths and line numbers. Even zero matches may represent an incomplete search.
+
 ## Options
 
 | Option | Purpose |
@@ -115,11 +117,13 @@ See the [MCP contract](docs/MCP_CONTRACT.md) for arguments. New documents start 
 
 **What protects writes?** `expected_text` is a local text condition that must occur exactly once in the current file; review the diff first. Absolute paths, `..` and cross-scope document paths are rejected; archives cannot be written directly. Scopes separate documents and do not replace operating-system permissions; see [write safety](docs/WRITE_SAFETY.md).
 
+MCP processes share a write lock per local vault on macOS/Linux/Windows, with a 10-second wait limit. The root keeps `.knowledge-mcp.lock`; do not delete it during operation, and add it to your vault's own `.gitignore` if needed. External editors and sync tools do not honor this lock; pause MCP writes while using them. Network filesystems have not been verified.
+
 **Is search semantic?** Search is keyword based (Chinese bigrams + BM25), with no vector search or embedding service. People must still check content and search results.
 
 ## Contributing
 
-Open an Issue describing the problem; install development dependencies and run `uv run pytest -q` locally. CI covers Ubuntu, macOS and Python 3.10 and 3.13.
+Open an Issue describing the problem; install development dependencies and run `uv run pytest -q` locally. CI covers Ubuntu, macOS, Windows and Python 3.10 and 3.13.
 
 ## License
 

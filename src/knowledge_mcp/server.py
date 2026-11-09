@@ -55,13 +55,26 @@ def search(
     limit: int = 20,
     include_archive: bool = False,
 ) -> list[dict[str, object]]:
-    """Search Markdown and return source paths, line numbers, and snippets."""
-    return [
+    """Return matches; a final warning record marks skipped, invalid notes.
+
+    Match records have path/line/snippet fields. A diagnostic record instead
+    has warning, partial=true and skipped (relative paths and error codes).
+    """
+    diagnostics: list[dict[str, str]] = []
+    results = [
         Vault.serialize_result(result)
         for result in get_vault().search(
-            scope, query, limit=limit, include_archive=include_archive
+            scope, query, limit=limit, include_archive=include_archive,
+            diagnostics=diagnostics,
         )
     ]
+    if diagnostics:
+        results.append({
+            "warning": "Partial search: some notes could not be searched. Repair the skipped notes and search again.",
+            "partial": True,
+            "skipped": diagnostics,
+        })
+    return results
 
 
 @mcp.tool(annotations=READ)

@@ -2,15 +2,18 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from datetime import date
+from functools import wraps
 import json
 from pathlib import Path
 import os
 import re
 import tempfile
 from typing import Literal, Sequence
+import warnings
 
 import yaml
 
+from .locking import vault_write_lock, WriteLockTimeout
 from .ranking import overlaps_enough, query_bigrams, Ranker, topic_of
 
 Scope = Literal["personal", "company"]
@@ -74,6 +77,23 @@ class DuplicateSourceError(VaultError):
 
 class InvalidMetadataError(VaultError):
     pass
+
+
+class VaultBusyError(VaultError):
+    pass
+
+
+def _serialized_write(method):
+    """Keep all file checks and mutations in the same cross-process lock."""
+    @wraps(method)
+    def locked(self, *args, **kwargs):
+        try:
+            with vault_write_lock(self.root):
+                return method(self, *args, **kwargs)
+        except WriteLockTimeout as exc:
+            raise VaultBusyError(str(exc)) from None
+
+    return locked
 
 
 def _normalized_date(value: str, field: str) -> str:
@@ -466,6 +486,7 @@ class Vault:
         *,
         limit: int = 20,
         include_archive: bool = False,
+        diagnostics: list[dict[str, str]] | None = None,
     ) -> list[SearchResult]:
         """Return matches ordered by relevance, each pointing at a real line.
 
@@ -505,19 +526,37 @@ class Vault:
             )
 
         candidates: list[tuple[str, str, list[tuple[int, str]]]] = []
+        full_text: dict[str, str] = {}
+
+        def skipped(relative: str, code: str) -> None:
+            # Never include parser exceptions: their messages quote note text.
+            if diagnostics is not None:
+                diagnostics.append({"path": relative, "code": code})
+            else:
+                warnings.warn(
+                    f"Partial search: skipped {relative!r} ({code})",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+
         for base in roots:
             if not base.is_dir():
                 continue
             for path in sorted(base.rglob("*.md")):
                 if path.is_symlink():
                     continue
+                relative = path.relative_to(self.root).as_posix()
                 try:
-                    path.relative_to(self.root)
                     text = path.read_text(encoding="utf-8")
                 except (OSError, UnicodeError):
+                    skipped(relative, "unreadable-document")
                     continue
 
-                metadata, _body = self._frontmatter(text)
+                try:
+                    metadata, _body = self._frontmatter(text)
+                except yaml.YAMLError:
+                    skipped(relative, "invalid-frontmatter")
+                    continue
                 declared_scope = metadata.get("scope")
                 if declared_scope is not None and declared_scope != scope:
                     continue
@@ -531,8 +570,8 @@ class Vault:
                     lowered, bigrams
                 ):
                     continue
-                relative = path.relative_to(self.root).as_posix()
                 candidates.append((relative, self._title(text, path.stem), lines))
+                full_text[relative] = text
 
         if not candidates:
             return []
@@ -540,10 +579,8 @@ class Vault:
         ranked = Ranker(candidates).rank(topic, limit=limit)
         by_path = {path: lines for path, _title, lines in candidates}
         titles = {path: title for path, title, _lines in candidates}
-        full_text = {
-            path: (self.root / path).read_text(encoding="utf-8")
-            for path, _title, _lines in candidates
-        }
+        # Rank and quote the same read, even if an editor changes a note while
+        # search is running. A second read could fail or invalidate line numbers.
         scored_results: list[tuple[float, SearchResult]] = []
         recency_epoch = date(2020, 1, 1).toordinal()
         recency_span = 10 * 365
@@ -709,6 +746,7 @@ class Vault:
         updated = original.replace(expected_text, replacement, 1)
         return {"path": normalized, "before": original, "after": updated}
 
+    @_serialized_write
     def apply_change(
         self,
         scope: str,
@@ -775,6 +813,7 @@ class Vault:
             result["replaced"] = sorted(replaced)
         return result
 
+    @_serialized_write
     def create_document(
         self,
         scope: str,
@@ -936,6 +975,7 @@ class Vault:
             result["replaced"] = sorted(replaced)
         return result
 
+    @_serialized_write
     def delete_document(
         self,
         scope: str,
@@ -973,6 +1013,7 @@ class Vault:
         self._prune_empty_dirs(target.parent, checked_scope)
         return {"scope": checked_scope, "path": normalized, "deleted": "true"}
 
+    @_serialized_write
     def move_document(
         self, scope: str, relative_path: str, new_path: str
     ) -> dict[str, str]:
