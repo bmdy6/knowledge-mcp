@@ -1,130 +1,83 @@
-# knowledge-mcp
+<!-- readme-from-code:banner:hero:start -->
+<h1><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/hero-dark.png">
+  <img src="docs/readme/hero-light.png" alt="knowledge-mcp — Find source lines in Markdown notes. Review every edit." width="838">
+</picture></h1>
+<p><em>Real stdio MCP search and diff on bundled synthetic notes, 2026-11-11; no note writes. <code>uv run --quiet python docs/readme/showcase/demo.py</code></em></p>
+<!-- readme-from-code:banner:hero:end -->
 
-Search Markdown notes with source lines and preview edits through a scoped MCP server.
+[中文](README.md) · [Quick start](#quick-start) · [Features](#features) · [Full reference](docs/REFERENCE.en.md)
 
-[中文](README.md)
+```sh
+uvx --from git+https://github.com/bmdy6/knowledge-mcp knowledge-mcp --vault /absolute/path/to/vault
+```
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/en/hero-dark.png">
-  <img src="docs/images/en/hero-light.png" alt="Real search results locate personal/reading.md by line, followed by an edit diff." width="660">
-</picture>
+For knowledge-vault maintainers who want AI-assisted organization with checkable sources. Markdown stays readable and editable; MCP supplies search and guarded maintenance.
 
-Real MCP output from bundled synthetic notes; the diff shows changed lines only and writes no files.
+## Why use it
+
+| By hand | With knowledge-mcp |
+| --- | --- |
+| Find a keyword, then open the file | Get paths, source lines and snippets together |
+| Ask an agent to rewrite a whole file | Preview a local replacement before deciding to write |
+| Search unrelated notes together | Explicitly select personal or company on every call |
+
+## Features
+
+| Find the evidence | Review the change |
+| --- | --- |
+| **Keyword search**: Chinese bigrams and BM25 return traceable snippets. | **Preview the diff**: show_diff shows the replacement without writing notes. |
+| **Exact source lines**: read_range returns the requested lines for checking. | **Conditional writes**: expected_text must match the current file exactly once. |
+| **Visible partial results**: healthy hits survive malformed notes, with a separate warning. | **Scope and archive guards**: paths stay inside the vault; archives cannot be edited directly. |
+
+## See it work
+
+The [replayable demo](docs/readme/showcase/demo.py) lists **10 tools and 8 resources** over real MCP. Searching synthetic notes for question returns **1 note**, reads **lines 14–18** of `personal/reading.md`, previews a replacement and verifies the file SHA is unchanged.
+
+The banner shows that search location and unchanged-file status. It is a keyword lookup, with no generated answer.
 
 ## Quick start
 
-```sh
-uvx --from git+https://github.com/bmdy6/knowledge-mcp knowledge-mcp --vault <路径>
-```
+Requires Python 3.10+, [uv](https://docs.astral.sh/uv/) and network access for the first download.
 
-Replace `<路径>` with your existing vault’s absolute path. To try the synthetic example, [download the main ZIP](https://github.com/bmdy6/knowledge-mcp/archive/refs/heads/main.zip), extract it, and select `examples/vault`; no clone is required.
-Connect a client, then ask: “Search personal for question; return paths, line numbers and snippets.” Requires Python 3.10+, [uv](https://docs.astral.sh/uv/getting-started/installation/), and network access for the first download.
 
-## Client configuration
 
-For a trial, copy the download’s `examples/vault` to `/tmp/knowledge-mcp-demo`. All three configurations use this directory; replace it with your own absolute path for ongoing use, then restart the client.
-`uvx` must be on the client’s PATH; the first download can take longer.
-
-### Claude Code
-
-Save as your project’s `.mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "knowledge": {
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/bmdy6/knowledge-mcp",
-        "knowledge-mcp",
-        "--vault",
-        "/tmp/knowledge-mcp-demo"
-      ]
-    }
-  }
-}
-```
-
-### Codex
-
-Add to `~/.codex/config.toml`:
-
-```toml
-[mcp_servers.knowledge]
-command = "uvx"
-args = ["--from", "git+https://github.com/bmdy6/knowledge-mcp", "knowledge-mcp", "--vault", "/tmp/knowledge-mcp-demo"]
-startup_timeout_sec = 60
-```
-
-### Cursor
-
-Save as your project’s `.cursor/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "knowledge": {
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/bmdy6/knowledge-mcp",
-        "knowledge-mcp",
-        "--vault",
-        "/tmp/knowledge-mcp-demo"
-      ]
-    }
-  }
-}
-```
-
-Read `knowledge://guide` after connecting. See the [client guide](docs/CLIENT_CONFIG.md) for settings and paths.
-
-## What you get
-
-- Search results include paths, line numbers and source snippets for checking the original.
-- `show_diff` previews edits; writes require `expected_text` to match the current file exactly once.
-- Explicit scopes and path checks keep document operations within the vault.
+Replace `/absolute/path/to/vault` with an existing vault directory. To try synthetic notes, [download the repository ZIP](https://github.com/bmdy6/knowledge-mcp/archive/refs/heads/main.zip) and select `examples/vault`.
+Connect a client, then ask: “Search personal for question; return paths, line numbers and snippets.” [Three client configurations](docs/REFERENCE.en.md#client-configuration) remain in the reference.
 
 ## How it works
 
-1. Search `personal` or `company`, then read the source with `read_range`.
-2. Supply the original text and replacement; review `show_diff`.
-3. Confirm, call `apply_change`, reread and validate; maintainers handle Git commits.
+```mermaid
+flowchart LR
+    A[Select scope] --> B[Search notes]
+    B --> C[Read source lines]
+    C --> D[Preview diff]
+    D --> E[Confirm conditional write]
+    E --> F[Reread and validate]
+```
 
-## Tools
+The server routes MCP calls into Vault's path and text checks. Writes use a local cross-process lock; maintainers handle history and Git commits.
 
-| Access | Tools |
-| --- | --- |
-| Read only | `search`, `list_documents`, `read`, `read_range`, `show_diff`, `validate_vault` |
-| Writes | `create_document`, `apply_change`, `move_document`, `delete_document` |
+## Built to be trusted
 
-See the [MCP contract](docs/MCP_CONTRACT.md) for arguments. New documents start as `review`; deletion, merging and moving also change files.
+- This run of `uv run pytest -q`: **69 passed**, covering stdio, search, resources, path boundaries and concurrent writes.
+- CI is configured for Ubuntu, macOS, Windows and Python 3.10/3.13. This run tested macOS locally.
+- Notes remain Markdown; search requires no embedding service. The MCP client's own data transfers depend on its configuration.
 
-When a note is malformed or unreadable, search returns healthy matches followed by a `{warning, partial: true, skipped}` diagnostic. Callers must distinguish records containing `warning` from matches with paths and line numbers. Even zero matches may represent an incomplete search.
+## FAQ and limits
 
-## Options
+**Is search semantic?** It is keyword based, without vectors. People must still check the results.
 
-| Option | Purpose |
-| --- | --- |
-| `--vault` / `KNOWLEDGE_VAULT` | Select an existing directory; the argument wins, and missing configuration exits. |
-| `scope` | Explicitly select `personal` or `company`. |
-| `include_archive` | Off by default; enable explicitly to read archived notes. |
+**Are scopes an access-control system?** They separate documents and do not replace operating-system permissions. Archives are excluded by default.
 
-## FAQ and boundaries
+**Does the write lock cover editors?** MCP processes wait at most 10 seconds for the lock. Editors and sync tools do not honor it; network filesystems are unverified.
 
-**How is a vault organized?** `personal/` and `company/` each contain Markdown notes and a `README.md` overview; `archive/` is optional. See the [content model](docs/CONTENT_MODEL.md) for frontmatter fields including `title`, `type`, `status`, `scope` and dates.
-
-**What protects writes?** `expected_text` is a local text condition that must occur exactly once in the current file; review the diff first. Absolute paths, `..` and cross-scope document paths are rejected; archives cannot be written directly. Scopes separate documents and do not replace operating-system permissions; see [write safety](docs/WRITE_SAFETY.md).
-
-MCP processes share a write lock per local vault on macOS/Linux/Windows, with a 10-second wait limit. The root keeps `.knowledge-mcp.lock`; do not delete it during operation, and add it to your vault's own `.gitignore` if needed. External editors and sync tools do not honor this lock; pause MCP writes while using them. Network filesystems have not been verified.
-
-**Is search semantic?** Search is keyword based (Chinese bigrams + BM25), with no vector search or embedding service. People must still check content and search results.
+**What happens to malformed notes?** Healthy matches remain, followed by `{warning, partial: true, skipped}`. A diagnostic is separate from a match.
 
 ## Contributing
 
-Open an Issue describing the problem; install development dependencies and run `uv run pytest -q` locally. CI covers Ubuntu, macOS, Windows and Python 3.10 and 3.13.
+Open an Issue and run `uv run pytest -q` during development. See [tools, options, content model and write boundaries](docs/REFERENCE.en.md) and [image reproduction](docs/readme/SOURCES.md).
 
 ## License
 
-[MIT](LICENSE).
+[MIT](LICENSE). Star the project if source-backed note maintenance is useful to you.

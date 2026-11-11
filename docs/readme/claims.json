@@ -1,0 +1,86 @@
+[
+  {
+    "claim": "**关键词搜索**：中文二元组与 BM25；返回可追溯片段。",
+    "factIds": [
+      "search"
+    ],
+    "readme": "README.md"
+  },
+  {
+    "claim": "**预览 diff**：show_diff 展示具体替换，不写笔记。",
+    "factIds": [
+      "diff"
+    ],
+    "readme": "README.md"
+  },
+  {
+    "claim": "**精确行号**：read_range 读取指定行，回到原文核对。",
+    "factIds": [
+      "read"
+    ],
+    "readme": "README.md"
+  },
+  {
+    "claim": "**条件写入**：expected_text 在当前文件中必须唯一匹配。",
+    "factIds": [
+      "write"
+    ],
+    "readme": "README.md"
+  },
+  {
+    "claim": "**部分结果可见**：坏笔记不吞掉健康命中，另附 warning 诊断。",
+    "factIds": [
+      "search"
+    ],
+    "readme": "README.md"
+  },
+  {
+    "claim": "**范围与归档保护**：限制知识库内路径，归档不能直接写入。",
+    "factIds": [
+      "move"
+    ],
+    "readme": "README.md"
+  },
+  {
+    "claim": "**Keyword search**: Chinese bigrams and BM25 return traceable snippets.",
+    "factIds": [
+      "search"
+    ],
+    "readme": "README.en.md"
+  },
+  {
+    "claim": "**Preview the diff**: show_diff shows the replacement without writing notes.",
+    "factIds": [
+      "diff"
+    ],
+    "readme": "README.en.md"
+  },
+  {
+    "claim": "**Exact source lines**: read_range returns the requested lines for checking.",
+    "factIds": [
+      "read"
+    ],
+    "readme": "README.en.md"
+  },
+  {
+    "claim": "**Conditional writes**: expected_text must match the current file exactly once.",
+    "factIds": [
+      "write"
+    ],
+    "readme": "README.en.md"
+  },
+  {
+    "claim": "**Visible partial results**: healthy hits survive malformed notes, with a separate warning.",
+    "factIds": [
+      "search"
+    ],
+    "readme": "README.en.md"
+  },
+  {
+    "claim": "**Scope and archive guards**: paths stay inside the vault; archives cannot be edited directly.",
+    "factIds": [
+      "move"
+    ],
+    "readme": "README.en.md"
+  }
+]

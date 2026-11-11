@@ -1,0 +1,44 @@
+[
+  {
+    "id": "search",
+    "claim": "Search notes with source lines",
+    "value": "def search(",
+    "source": "src/knowledge_mcp/server.py:52"
+  },
+  {
+    "id": "read",
+    "claim": "Read exact source lines",
+    "value": "def read_range(",
+    "source": "src/knowledge_mcp/server.py:114"
+  },
+  {
+    "id": "diff",
+    "claim": "Preview version-checked edits",
+    "value": "def show_diff(",
+    "source": "src/knowledge_mcp/server.py:132"
+  },
+  {
+    "id": "write",
+    "claim": "Apply an exact unique replacement",
+    "value": "def apply_change(",
+    "source": "src/knowledge_mcp/server.py:152"
+  },
+  {
+    "id": "create",
+    "claim": "Create review-status notes",
+    "value": "def create_document(",
+    "source": "src/knowledge_mcp/server.py:172"
+  },
+  {
+    "id": "move",
+    "claim": "Move scoped notes",
+    "value": "def move_document(",
+    "source": "src/knowledge_mcp/server.py:245"
+  },
+  {
+    "id": "demo",
+    "claim": "Count live tools/resources and demonstrate a source-backed diff",
+    "value": "len(tools.tools)",
+    "source": "docs/readme/showcase/demo.py:36"
+  }
+]
