@@ -6,6 +6,7 @@
 
 | 想要 | 用 |
 | --- | --- |
+| 按已知标题、文件名、路径或来源找文档 | `find_document(scope, query)` |
 | 按关键词找内容 | `search(scope, query, limit)` |
 | 看某个目录下有什么 | `list_documents(scope, prefix)` |
 | 读整篇原文 | `read(scope, path)` |
@@ -15,6 +16,8 @@
 `scope` 只能是 `personal` 或 `company`，必须显式给。不要用一次调用去猜 scope。
 
 ## 搜索怎么给结果
+
+用 `find_document` 定位已知文档时，先检查 `searched_roots` 和 `partial`。命中类型为 `source` 时，返回的是声明该来源的本地笔记。要找笔记正文里的链接或近似名称，接着用 `search`，再用 `read` 核对。
 
 按相关度排序，不是按文件路径。每条包含 `path`、`line_start`、`line_end`、`title`、`snippet`。
 

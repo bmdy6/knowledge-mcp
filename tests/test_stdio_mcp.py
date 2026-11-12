@@ -168,3 +168,73 @@ async def _assert_stdio_contract(root: Path) -> None:
             validation = await session.call_tool("validate_vault", {})
             assert not validation.isError
             assert validation.content == []
+
+
+def test_find_document_reports_coverage_and_source_references(tmp_path: Path) -> None:
+    for folder in ("personal", "company", "archive"):
+        (tmp_path / folder).mkdir()
+    (tmp_path / "personal/reference.md").write_text(
+        "---\ntitle: Work notes\nscope: personal\nsources:\n"
+        "  - https://example.test/docs/AbC\n---\n\n# Work notes\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "archive/archived-note.md").write_text(
+        "---\ntitle: Work notes\nscope: personal\n---\n\nArchived body.\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "archive/other-scope.md").write_text(
+        "---\ntitle: Work notes\nscope: company\n---\n\nOther scope.\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "company/reference.md").write_text(
+        "# Work notes\n", encoding="utf-8",
+    )
+    (tmp_path / "personal/broken.md").write_text(
+        "---\ntitle: [private-marker\n---\n", encoding="utf-8",
+    )
+    asyncio.run(_assert_find_document(tmp_path))
+    assert not (tmp_path / ".knowledge-mcp.lock").exists()
+
+
+async def _assert_find_document(root: Path) -> None:
+    parameters = StdioServerParameters(
+        command=sys.executable,
+        args=["-m", "knowledge_mcp.server", "--vault", str(root)],
+        env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src")},
+    )
+    async with stdio_client(parameters) as (reader, writer):
+        async with ClientSession(reader, writer) as session:
+            await session.initialize()
+            tools = {tool.name: tool for tool in (await session.list_tools()).tools}
+            assert tools["find_document"].annotations.readOnlyHint is True
+
+            async def find(query: str, **options) -> dict:
+                response = await session.call_tool(
+                    "find_document", {"scope": "personal", "query": query, **options},
+                )
+                assert not response.isError
+                assert response.structuredContent is not None
+                assert "private-marker" not in str(response.content)
+                assert str(root) not in str(response.content)
+                return response.structuredContent
+
+            source = await find("https://example.test/docs/AbC")
+            assert source == {
+                "scope": "personal", "include_archive": False,
+                "searched_roots": ["personal"], "partial": True, "truncated": False,
+                "skipped": [{"path": "personal/broken.md", "code": "invalid-frontmatter"}],
+                "matches": [{"path": "personal/reference.md", "title": "Work notes", "match_kind": "source"}],
+            }
+            assert (await find("https://example.test/docs/abc"))["matches"] == []
+            for path in ("personal/reference.md", "reference.md", "reference"):
+                assert (await find(path))["matches"][0]["match_kind"] == "path"
+            assert (await find("archive/archived-note.md"))["matches"] == []
+            archive = await find("work notes", include_archive=True)
+            assert archive["searched_roots"] == ["personal", "archive"]
+            assert archive["matches"] == [
+                {"path": "personal/reference.md", "title": "Work notes", "match_kind": "title"},
+                {"path": "archive/archived-note.md", "title": "Work notes", "match_kind": "title"},
+            ]
+            limited = await find("Work notes", include_archive=True, limit=1)
+            assert limited["truncated"] is True
+            assert limited["matches"] == archive["matches"][:1]

@@ -96,7 +96,7 @@ startup_timeout_sec = 60
 
 | 权限 | 工具 |
 | --- | --- |
-| 只读 | `search`、`list_documents`、`read`、`read_range`、`show_diff`、`validate_vault` |
+| 只读 | `search`、`find_document`、`list_documents`、`read`、`read_range`、`show_diff`、`validate_vault` |
 | 写入 | `create_document`、`apply_change`、`move_document`、`delete_document` |
 
 参数见 [MCP 契约](docs/MCP_CONTRACT.md)。新建文档固定为 `review`；删除、合并和移动也会改动文件。

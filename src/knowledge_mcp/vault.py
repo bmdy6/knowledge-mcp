@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import asdict, dataclass
 from datetime import date
 from functools import wraps
@@ -468,9 +469,8 @@ class Vault:
         )
         return searchable
 
-    @classmethod
-    def _title(cls, text: str, fallback: str) -> str:
-        metadata, body = cls._frontmatter(text)
+    @staticmethod
+    def _title(metadata: dict[str, object], body: str, fallback: str) -> str:
         value = metadata.get("title")
         if isinstance(value, str) and value.strip():
             return value.strip()
@@ -478,6 +478,112 @@ class Vault:
             if line.startswith("# "):
                 return line[2:].strip()
         return fallback
+
+    def _search_roots(self, scope: str, include_archive: bool) -> list[Path]:
+        if scope not in SCOPE_ROOTS:
+            raise InvalidScopeError(f"Unsupported scope: {scope}")
+        roots = [self.root / SCOPE_ROOTS[scope]]
+        if include_archive:
+            roots.append(self.root / "archive")
+        return roots
+
+    def _search_documents(
+        self,
+        scope: str,
+        roots: list[Path],
+        diagnostics: list[dict[str, str]] | None,
+        searched_roots: list[str] | None = None,
+    ) -> Iterator[tuple[Path, str, dict[str, object], str]]:
+        def skipped(path: Path, code: str) -> None:
+            # Never include parser exceptions: their messages quote note text.
+            relative = path.relative_to(self.root).as_posix()
+            if diagnostics is not None:
+                diagnostics.append({"path": relative, "code": code})
+            else:
+                warnings.warn(
+                    f"Partial search: skipped {relative!r} ({code})",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+
+        for base in roots:
+            if base.is_symlink():
+                skipped(base, "symlink-search-root")
+                continue
+            if not base.is_dir():
+                continue
+            if searched_roots is not None:
+                searched_roots.append(base.name)
+            for path in sorted(base.rglob("*.md")):
+                if path.is_symlink():
+                    continue
+                try:
+                    text = path.read_text(encoding="utf-8")
+                except (OSError, UnicodeError):
+                    skipped(path, "unreadable-document")
+                    continue
+                try:
+                    metadata, body = self._frontmatter(text)
+                except yaml.YAMLError:
+                    skipped(path, "invalid-frontmatter")
+                    continue
+                declared_scope = metadata.get("scope")
+                if declared_scope is None or declared_scope == scope:
+                    yield path, text, metadata, body
+
+    def find_document(
+        self,
+        scope: str,
+        query: str,
+        *,
+        limit: int = 20,
+        include_archive: bool = False,
+    ) -> dict[str, object]:
+        """Find exact title, path, or declared-source matches and report coverage."""
+        roots = self._search_roots(scope, include_archive)
+        query = query.strip()
+        if not query:
+            raise ValueError("query must not be empty")
+        if not 1 <= limit <= 100:
+            raise ValueError("limit must be between 1 and 100")
+
+        path_query = query.replace("\\", "/").removeprefix("./")
+        title_query = query.casefold()
+        skipped: list[dict[str, str]] = []
+        searched_roots: list[str] = []
+        matches: list[dict[str, str]] = []
+        for path, _text, metadata, body in self._search_documents(
+            scope, roots, skipped, searched_roots
+        ):
+            relative = path.relative_to(self.root).as_posix()
+            title = self._title(metadata, body, path.stem)
+            sources = metadata.get("sources")
+            if path_query in (
+                relative, relative.removeprefix(f"{SCOPE_ROOTS[scope]}/"),
+                path.name, path.stem,
+            ):
+                kind = "path"
+            elif title.casefold() == title_query:
+                kind = "title"
+            elif isinstance(sources, list) and any(
+                isinstance(source, str) and source.strip() == query for source in sources
+            ):
+                kind = "source"
+            else:
+                continue
+            matches.append({"path": relative, "title": title, "match_kind": kind})
+
+        match_order = {"path": 0, "title": 1, "source": 2}
+        matches.sort(key=lambda match: match_order[match["match_kind"]])
+        return {
+            "scope": scope,
+            "include_archive": include_archive,
+            "searched_roots": searched_roots,
+            "matches": matches[:limit],
+            "partial": bool(skipped),
+            "skipped": skipped,
+            "truncated": len(matches) > limit,
+        }
 
     def search(
         self,
@@ -498,16 +604,11 @@ class Vault:
         holding the most query words, because that is what a reader needs to land
         on.
         """
-        if scope not in SCOPE_ROOTS:
-            raise InvalidScopeError(f"Unsupported scope: {scope}")
+        roots = self._search_roots(scope, include_archive)
         if not query.strip():
             return []
         if not 1 <= limit <= 100:
             raise ValueError("limit must be between 1 and 100")
-
-        roots = [self.root / SCOPE_ROOTS[scope]]
-        if include_archive:
-            roots.append(self.root / "archive")
 
         # A query may hold several words (``缓存策略 适用场景``). Matching the whole
         # string literally would drop every multi-word query before ranking, so
@@ -528,50 +629,19 @@ class Vault:
         candidates: list[tuple[str, str, list[tuple[int, str]]]] = []
         full_text: dict[str, str] = {}
 
-        def skipped(relative: str, code: str) -> None:
-            # Never include parser exceptions: their messages quote note text.
-            if diagnostics is not None:
-                diagnostics.append({"path": relative, "code": code})
-            else:
-                warnings.warn(
-                    f"Partial search: skipped {relative!r} ({code})",
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
-
-        for base in roots:
-            if not base.is_dir():
+        for path, text, metadata, body in self._search_documents(
+            scope, roots, diagnostics
+        ):
+            lines = self._searchable_lines(text)
+            # Ranking orders candidates that contain a query word or enough bigrams.
+            lowered = "\n".join(line for _number, line in lines).casefold()
+            if not any(part in lowered for part in needles) and not overlaps_enough(
+                lowered, bigrams
+            ):
                 continue
-            for path in sorted(base.rglob("*.md")):
-                if path.is_symlink():
-                    continue
-                relative = path.relative_to(self.root).as_posix()
-                try:
-                    text = path.read_text(encoding="utf-8")
-                except (OSError, UnicodeError):
-                    skipped(relative, "unreadable-document")
-                    continue
-
-                try:
-                    metadata, _body = self._frontmatter(text)
-                except yaml.YAMLError:
-                    skipped(relative, "invalid-frontmatter")
-                    continue
-                declared_scope = metadata.get("scope")
-                if declared_scope is not None and declared_scope != scope:
-                    continue
-
-                lines = self._searchable_lines(text)
-                # Keep documents holding a word of the query, or most of its bigrams
-                # when the wording differs ("重复消费" against "重复" and "消费").
-                # Ranking never invents matches, it only orders the ones that exist.
-                lowered = "\n".join(line for _number, line in lines).casefold()
-                if not any(part in lowered for part in needles) and not overlaps_enough(
-                    lowered, bigrams
-                ):
-                    continue
-                candidates.append((relative, self._title(text, path.stem), lines))
-                full_text[relative] = text
+            relative = path.relative_to(self.root).as_posix()
+            candidates.append((relative, self._title(metadata, body, path.stem), lines))
+            full_text[relative] = text
 
         if not candidates:
             return []
