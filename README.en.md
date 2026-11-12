@@ -96,7 +96,7 @@ Read `knowledge://guide` after connecting. See the [client guide](docs/CLIENT_CO
 
 | Access | Tools |
 | --- | --- |
-| Read only | `search`, `list_documents`, `read`, `read_range`, `show_diff`, `validate_vault` |
+| Read only | `search`, `find_document`, `list_documents`, `read`, `read_range`, `show_diff`, `validate_vault` |
 | Writes | `create_document`, `apply_change`, `move_document`, `delete_document` |
 
 See the [MCP contract](docs/MCP_CONTRACT.md) for arguments. New documents start as `review`; deletion, merging and moving also change files.

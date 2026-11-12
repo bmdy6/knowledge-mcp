@@ -7,6 +7,7 @@
 | 工具 | 参数 |
 | --- | --- |
 | `search` | `scope, query, limit=20, include_archive=false` |
+| `find_document` | `scope, query, limit=20, include_archive=false` |
 | `list_documents` | `scope, prefix="", include_archive=false` |
 | `validate_vault` | `scope=null, include_archive=false` |
 | `read` | `scope, path, include_archive=false` |
@@ -23,9 +24,13 @@
 
 ## 搜索和读取
 
+已知标题、路径、文件名或来源时，先用 `find_document`。它按原值定位，不做模糊匹配。标题忽略大小写，路径相对 vault 或已选 scope，文件名可省略 `.md`，`sources` 中的来源值按大小写精确比较。
+
+返回对象含 `scope`、`include_archive`、`searched_roots`、`matches`、`partial`、`skipped`、`truncated`。`searched_roots` 列出实际扫描的相对目录。`matches` 每条含 `path`、`title`、`match_kind`，优先返回 `path`，然后是 `title`、`source`。同类命中先列当前资料，再列归档。`truncated` 表示命中数超过 limit。`source` 表示该笔记声明了来源，返回路径仍是本地笔记。用 `search` 找正文里的链接、关键词或近似名称，用 `read` 核对文档。
+
 搜索结果含 `scope`、`path`、`line_start`、`line_end`、`title`、`snippet`，行号从 1 开始。检索正文和 frontmatter 中的 title、series、tags，返回原始位置；状态等管理字段不作为普通关键词。
 
-遇到 YAML 损坏或不可读文件时，搜索继续返回健康笔记的命中，并在返回列表末尾追加一个诊断记录：`{warning, partial: true, skipped: [{path, code}]}`。调用方必须先判断是否含 `warning`，不能把诊断当作有行号的命中；`limit` 只限制命中数量。即使没有命中，也会返回该诊断，不能把它解释为完整搜索后没有结果。`code` 为 `invalid-frontmatter` 或 `unreadable-document`，只带相对路径，不包含笔记原文或解析异常。正常搜索的列表结构不变；`validate_vault` 可辅助定位并修复笔记后重新搜索。
+遇到 YAML 损坏或不可读文件时，搜索继续返回健康笔记的命中，并在返回列表末尾追加一个诊断记录：`{warning, partial: true, skipped: [{path, code}]}`。调用方必须先判断是否含 `warning`，不能把诊断当作有行号的命中；`limit` 只限制命中数量。即使没有命中，也会返回该诊断，不能把它解释为完整搜索后没有结果。`code` 为 `invalid-frontmatter`、`unreadable-document` 或 `symlink-search-root`，只带相对路径，不包含笔记原文或解析异常。`find_document` 在返回对象中提供同样的 `partial` 和 `skipped` 信息。`search` 的列表结构不变。`validate_vault` 可辅助定位并修复笔记后重新搜索。
 
 BM25 综合词频与文档长度，中文按二元组匹配，标题和英文技术词加权，导航页降权。结果定位到文档中选中的命中章节，不保证是首个字面命中；用 `read_range` 核实上下文。搜索默认排除 archive，开启后仍排除显式声明另一 scope 的归档。未声明 scope 的旧归档可能在两个 scope 的归档搜索中出现。
 

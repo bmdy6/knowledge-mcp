@@ -902,3 +902,25 @@ def test_search_ranks_book_above_auxiliary_note(tmp_path):
 
 def test_search_still_returns_nothing_for_unrelated_query(tmp_path):
     assert _ranked_vault(tmp_path).search("personal", "量子计算") == []
+
+
+def test_search_does_not_traverse_symlinked_scope_root(tmp_path: Path) -> None:
+    company = tmp_path / "company"
+    company.mkdir()
+    (company / "note.md").write_text("# Confidential\n", encoding="utf-8")
+    try:
+        (tmp_path / "personal").symlink_to(company, target_is_directory=True)
+    except OSError:
+        pytest.skip("directory symlinks are unavailable")
+
+    vault = Vault(tmp_path)
+    expected = [{"path": "personal", "code": "symlink-search-root"}]
+    found = vault.find_document("personal", "Confidential")
+    assert found["matches"] == []
+    assert found["searched_roots"] == []
+    assert found["partial"] is True
+    assert found["skipped"] == expected
+
+    diagnostics = []
+    assert vault.search("personal", "Confidential", diagnostics=diagnostics) == []
+    assert diagnostics == expected

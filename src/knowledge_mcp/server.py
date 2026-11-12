@@ -59,6 +59,7 @@ def search(
 
     Match records have path/line/snippet fields. A diagnostic record instead
     has warning, partial=true and skipped (relative paths and error codes).
+    For an exact title, path, or declared source, use find_document.
     """
     diagnostics: list[dict[str, str]] = []
     results = [
@@ -75,6 +76,24 @@ def search(
             "skipped": diagnostics,
         })
     return results
+
+
+@mcp.tool(annotations=READ)
+def find_document(
+    scope: str,
+    query: str,
+    limit: int = 20,
+    include_archive: bool = False,
+) -> dict[str, object]:
+    """Locate an exact title, Markdown path, filename, or declared source.
+
+    Reports which roots were searched and whether files were skipped. A source
+    match points to the local note that declares it, not the external document.
+    Use search for body text or approximate terms, then read to verify content.
+    """
+    return get_vault().find_document(
+        scope, query, limit=limit, include_archive=include_archive
+    )
 
 
 @mcp.tool(annotations=READ)
