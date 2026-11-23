@@ -1,0 +1,268 @@
+{
+  "mode": "bm25",
+  "model": null,
+  "top_n": null,
+  "questions": 40,
+  "questions_sha256": "4fe6338fe0e97e38b364a24bcdf45e8df6d50342b87c6024ca161a21fb83551c",
+  "repeats": 3,
+  "warmup_rounds": 1,
+  "load_ms": 0.01420799526385963,
+  "python": "3.13.7",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "summary": {
+    "recall@1": 0.675,
+    "recall@5": 0.85,
+    "recall@10": 0.9,
+    "mrr@10": 0.765625,
+    "p50_ms": 3.3074789826059714,
+    "p95_ms": 4.24105770944152
+  },
+  "types": {
+    "colloquial": 16,
+    "exact": 9,
+    "paraphrase": 5,
+    "technical": 10
+  },
+  "details": [
+    {
+      "id": "queue-1",
+      "type": "exact",
+      "rank": 2,
+      "latency_ms": 3.5952909965999424
+    },
+    {
+      "id": "queue-2",
+      "type": "colloquial",
+      "rank": 1,
+      "latency_ms": 3.6162920005153865
+    },
+    {
+      "id": "idempotency-1",
+      "type": "paraphrase",
+      "rank": 1,
+      "latency_ms": 3.4890839888248593
+    },
+    {
+      "id": "idempotency-2",
+      "type": "colloquial",
+      "rank": 1,
+      "latency_ms": 3.9802500104997307
+    },
+    {
+      "id": "outbox-1",
+      "type": "technical",
+      "rank": 1,
+      "latency_ms": 3.231459006201476
+    },
+    {
+      "id": "outbox-2",
+      "type": "colloquial",
+      "rank": 2,
+      "latency_ms": 3.838916018139571
+    },
+    {
+      "id": "pool-1",
+      "type": "exact",
+      "rank": 1,
+      "latency_ms": 3.1616670021321625
+    },
+    {
+      "id": "pool-2",
+      "type": "colloquial",
+      "rank": 3,
+      "latency_ms": 3.9749169955030084
+    },
+    {
+      "id": "index-1",
+      "type": "technical",
+      "rank": 1,
+      "latency_ms": 3.3073330123443156
+    },
+    {
+      "id": "index-2",
+      "type": "colloquial",
+      "rank": 8,
+      "latency_ms": 4.749084007926285
+    },
+    {
+      "id": "optimistic-lock-1",
+      "type": "exact",
+      "rank": 1,
+      "latency_ms": 3.724125010194257
+    },
+    {
+      "id": "optimistic-lock-2",
+      "type": "colloquial",
+      "rank": 6,
+      "latency_ms": 4.7608750173822045
+    },
+    {
+      "id": "asyncio-1",
+      "type": "technical",
+      "rank": 1,
+      "latency_ms": 3.3073749800678343
+    },
+    {
+      "id": "asyncio-2",
+      "type": "colloquial",
+      "rank": 1,
+      "latency_ms": 3.0449159967247397
+    },
+    {
+      "id": "backpressure-1",
+      "type": "exact",
+      "rank": 1,
+      "latency_ms": 2.936083998065442
+    },
+    {
+      "id": "backpressure-2",
+      "type": "colloquial",
+      "rank": 1,
+      "latency_ms": 3.2992079795803875
+    },
+    {
+      "id": "timeouts-1",
+      "type": "exact",
+      "rank": 1,
+      "latency_ms": 3.0859580147080123
+    },
+    {
+      "id": "timeouts-2",
+      "type": "paraphrase",
+      "rank": 0,
+      "latency_ms": 3.0570410017389804
+    },
+    {
+      "id": "circuit-breaker-1",
+      "type": "exact",
+      "rank": 1,
+      "latency_ms": 2.960250014439225
+    },
+    {
+      "id": "circuit-breaker-2",
+      "type": "colloquial",
+      "rank": 1,
+      "latency_ms": 3.302875004010275
+    },
+    {
+      "id": "cache-aside-1",
+      "type": "technical",
+      "rank": 1,
+      "latency_ms": 2.947749977465719
+    },
+    {
+      "id": "cache-aside-2",
+      "type": "colloquial",
+      "rank": 1,
+      "latency_ms": 3.140957996947691
+    },
+    {
+      "id": "cache-stampede-1",
+      "type": "exact",
+      "rank": 1,
+      "latency_ms": 3.091791004408151
+    },
+    {
+      "id": "cache-stampede-2",
+      "type": "paraphrase",
+      "rank": 2,
+      "latency_ms": 3.381707996595651
+    },
+    {
+      "id": "tenant-1",
+      "type": "technical",
+      "rank": 1,
+      "latency_ms": 2.999832999194041
+    },
+    {
+      "id": "tenant-2",
+      "type": "colloquial",
+      "rank": 0,
+      "latency_ms": 3.2850409916136414
+    },
+    {
+      "id": "oauth-1",
+      "type": "technical",
+      "rank": 1,
+      "latency_ms": 3.587082988815382
+    },
+    {
+      "id": "oauth-2",
+      "type": "paraphrase",
+      "rank": 1,
+      "latency_ms": 3.9076670072972775
+    },
+    {
+      "id": "sse-1",
+      "type": "technical",
+      "rank": 1,
+      "latency_ms": 3.3759590005502105
+    },
+    {
+      "id": "sse-2",
+      "type": "colloquial",
+      "rank": 2,
+      "latency_ms": 3.267417021561414
+    },
+    {
+      "id": "rag-1",
+      "type": "technical",
+      "rank": 1,
+      "latency_ms": 3.3443339925725013
+    },
+    {
+      "id": "rag-2",
+      "type": "colloquial",
+      "rank": 0,
+      "latency_ms": 3.5176250094082206
+    },
+    {
+      "id": "chunk-1",
+      "type": "exact",
+      "rank": 1,
+      "latency_ms": 3.216708020772785
+    },
+    {
+      "id": "chunk-2",
+      "type": "paraphrase",
+      "rank": 0,
+      "latency_ms": 3.3222500060219318
+    },
+    {
+      "id": "injection-1",
+      "type": "exact",
+      "rank": 1,
+      "latency_ms": 3.1478750170208514
+    },
+    {
+      "id": "injection-2",
+      "type": "colloquial",
+      "rank": 1,
+      "latency_ms": 3.711750003276393
+    },
+    {
+      "id": "agent-loop-1",
+      "type": "technical",
+      "rank": 1,
+      "latency_ms": 3.2709590159356594
+    },
+    {
+      "id": "agent-loop-2",
+      "type": "colloquial",
+      "rank": 2,
+      "latency_ms": 3.3075829851441085
+    },
+    {
+      "id": "evaluation-1",
+      "type": "technical",
+      "rank": 1,
+      "latency_ms": 3.2732920080889016
+    },
+    {
+      "id": "evaluation-2",
+      "type": "colloquial",
+      "rank": 2,
+      "latency_ms": 3.1186249980237335
+    }
+  ]
+}
