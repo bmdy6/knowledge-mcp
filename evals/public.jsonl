@@ -1,0 +1,40 @@
+{"id": "queue-1", "scope": "personal", "query": "为什么要用消息队列", "expected_paths": ["personal/queue.md"], "type": "exact"}
+{"id": "queue-2", "scope": "personal", "query": "流量突然暴涨 消息 怎么让后台慢慢处理", "expected_paths": ["personal/queue.md"], "type": "colloquial"}
+{"id": "idempotency-1", "scope": "personal", "query": "重复消费怎么办", "expected_paths": ["personal/idempotency.md"], "type": "paraphrase"}
+{"id": "idempotency-2", "scope": "personal", "query": "消息 重试 怎样避免同一订单扣两遍钱", "expected_paths": ["personal/idempotency.md"], "type": "colloquial"}
+{"id": "outbox-1", "scope": "personal", "query": "Outbox 事务消息", "expected_paths": ["personal/outbox.md"], "type": "technical"}
+{"id": "outbox-2", "scope": "personal", "query": "数据库 写成功了但是消息没发出去怎么办", "expected_paths": ["personal/outbox.md"], "type": "colloquial"}
+{"id": "pool-1", "scope": "personal", "query": "数据库连接池 上限", "expected_paths": ["personal/pool.md"], "type": "exact"}
+{"id": "pool-2", "scope": "personal", "query": "数据库 请求都在等拿连接 要把池开多大", "expected_paths": ["personal/pool.md"], "type": "colloquial"}
+{"id": "index-1", "scope": "personal", "query": "EXPLAIN 索引", "expected_paths": ["personal/index.md"], "type": "technical"}
+{"id": "index-2", "scope": "personal", "query": "数据库 查一条数据却扫了整张表 怎么查", "expected_paths": ["personal/index.md"], "type": "colloquial"}
+{"id": "optimistic-lock-1", "scope": "personal", "query": "乐观锁 版本号", "expected_paths": ["personal/optimistic-lock.md"], "type": "exact"}
+{"id": "optimistic-lock-2", "scope": "personal", "query": "两个人同时编辑 数据 怎样避免后保存覆盖前一个", "expected_paths": ["personal/optimistic-lock.md"], "type": "colloquial"}
+{"id": "asyncio-1", "scope": "personal", "query": "asyncio 阻塞", "expected_paths": ["personal/asyncio.md"], "type": "technical"}
+{"id": "asyncio-2", "scope": "personal", "query": "async 函数里调用同步库 整个服务卡住了", "expected_paths": ["personal/asyncio.md"], "type": "colloquial"}
+{"id": "backpressure-1", "scope": "personal", "query": "背压 有界队列", "expected_paths": ["personal/backpressure.md"], "type": "exact"}
+{"id": "backpressure-2", "scope": "personal", "query": "队列 任务来得比处理快 内存一直涨怎么办", "expected_paths": ["personal/backpressure.md"], "type": "colloquial"}
+{"id": "timeouts-1", "scope": "personal", "query": "超时 重试退避", "expected_paths": ["personal/timeouts.md"], "type": "exact"}
+{"id": "timeouts-2", "scope": "personal", "query": "接口 一失败大家就同时再试 服务更慢怎么办", "expected_paths": ["personal/timeouts.md"], "type": "paraphrase"}
+{"id": "circuit-breaker-1", "scope": "personal", "query": "熔断 半开", "expected_paths": ["personal/circuit-breaker.md"], "type": "exact"}
+{"id": "circuit-breaker-2", "scope": "personal", "query": "下游 总是失败 怎样暂时别再打它", "expected_paths": ["personal/circuit-breaker.md"], "type": "colloquial"}
+{"id": "cache-aside-1", "scope": "personal", "query": "Cache Aside 一致性", "expected_paths": ["personal/cache-aside.md"], "type": "technical"}
+{"id": "cache-aside-2", "scope": "personal", "query": "缓存 更新数据库后还读到旧值 怎么办", "expected_paths": ["personal/cache-aside.md"], "type": "colloquial"}
+{"id": "cache-stampede-1", "scope": "personal", "query": "缓存击穿 热点", "expected_paths": ["personal/cache-stampede.md"], "type": "exact"}
+{"id": "cache-stampede-2", "scope": "personal", "query": "缓存 热门商品一过期 数据库突然被打满", "expected_paths": ["personal/cache-stampede.md"], "type": "paraphrase"}
+{"id": "tenant-1", "scope": "personal", "query": "多租户 tenant_id", "expected_paths": ["personal/tenant.md"], "type": "technical"}
+{"id": "tenant-2", "scope": "personal", "query": "用户 改了请求里的租户编号 看到了别人的数据", "expected_paths": ["personal/tenant.md"], "type": "colloquial"}
+{"id": "oauth-1", "scope": "personal", "query": "OAuth 刷新令牌", "expected_paths": ["personal/oauth.md"], "type": "technical"}
+{"id": "oauth-2", "scope": "personal", "query": "授权 已经撤销 应用为什么还能继续访问", "expected_paths": ["personal/oauth.md"], "type": "paraphrase"}
+{"id": "sse-1", "scope": "personal", "query": "SSE 事件流", "expected_paths": ["personal/sse.md"], "type": "technical"}
+{"id": "sse-2", "scope": "personal", "query": "进度 页面断线重连 怎么接着收服务端的通知", "expected_paths": ["personal/sse.md"], "type": "colloquial"}
+{"id": "rag-1", "scope": "personal", "query": "RAG 召回重排", "expected_paths": ["personal/rag.md"], "type": "technical"}
+{"id": "rag-2", "scope": "personal", "query": "检索 答案根本不在候选里 换排序有用吗", "expected_paths": ["personal/rag.md"], "type": "colloquial"}
+{"id": "chunk-1", "scope": "personal", "query": "文档分块 上下文", "expected_paths": ["personal/chunk.md"], "type": "exact"}
+{"id": "chunk-2", "scope": "personal", "query": "检索 每段切得太短 找到一句却读不懂前因后果", "expected_paths": ["personal/chunk.md"], "type": "paraphrase"}
+{"id": "injection-1", "scope": "personal", "query": "提示注入 不可信内容", "expected_paths": ["personal/injection.md"], "type": "exact"}
+{"id": "injection-2", "scope": "personal", "query": "网页 里面写着忽略用户要求 该听它的吗", "expected_paths": ["personal/injection.md"], "type": "colloquial"}
+{"id": "agent-loop-1", "scope": "personal", "query": "Agent 停止条件", "expected_paths": ["personal/agent-loop.md"], "type": "technical"}
+{"id": "agent-loop-2", "scope": "personal", "query": "Agent 一直调用工具不结束 怎么让它知道做完了", "expected_paths": ["personal/agent-loop.md"], "type": "colloquial"}
+{"id": "evaluation-1", "scope": "personal", "query": "检索评测 MRR", "expected_paths": ["personal/evaluation.md"], "type": "technical"}
+{"id": "evaluation-2", "scope": "personal", "query": "评测 改完算法再改题 为什么不能证明效果", "expected_paths": ["personal/evaluation.md"], "type": "colloquial"}
