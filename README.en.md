@@ -151,3 +151,8 @@ set `FASTEMBED_CACHE_PATH` to keep a persistent model cache. Models are reused a
 searches. Missing dependencies and model/inference failures log a warning and fall
 back to BM25 until process restart. Invalid YAML configuration fails explicitly.
 See [the evaluation report](evals/REPORT.md) for measured gains, regressions and latency.
+
+In the two 40-question sets, Recall@1 rose from 67.5% to 80.0% (public) and
+55.0% to 57.5% (private), while private Recall@5 fell from 92.5% to 90.0%.
+Median search latency rose from 3.31 to 24.07 ms (public) and from 445.12 to
+2534.87 ms (private). Evaluate your own questions before enabling it.

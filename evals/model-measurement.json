@@ -1,0 +1,19 @@
+{
+  "model": "BAAI/bge-reranker-base",
+  "empty_cache": true,
+  "download_and_load_seconds": 199.88636783399852,
+  "smoke_inference_seconds": 0.018021625000983477,
+  "smoke_scores": [
+    6.7950263023376465,
+    -10.192626953125
+  ],
+  "downloaded_bytes": 1129562295,
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "revision": "2cfc18c9415c912f9d8155881c133215df768a70",
+  "onnx_bytes": 1112459588,
+  "threads": 4,
+  "batch_size": 8,
+  "providers": [
+    "CPUExecutionProvider"
+  ]
+}
