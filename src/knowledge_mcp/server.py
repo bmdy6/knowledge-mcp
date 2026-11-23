@@ -11,6 +11,7 @@ from mcp.server.fastmcp.utilities.func_metadata import ArgModelBase
 from pydantic import ConfigDict
 
 from .resources import RepositoryResources
+from .reranking import load_config
 from .vault import Vault
 
 # FastMCP builds each tool's argument model from the Python signature and, by
@@ -39,7 +40,8 @@ def get_vault() -> Vault:
     root = os.environ.get("KNOWLEDGE_VAULT", "").strip()
     if not root:
         raise ValueError("set --vault <path> or KNOWLEDGE_VAULT")
-    return Vault(Path(root).expanduser())
+    config = os.environ.get("KNOWLEDGE_MCP_CONFIG", "").strip()
+    return Vault(Path(root).expanduser(), rerank=load_config(Path(config) if config else None))
 
 
 
@@ -342,6 +344,7 @@ def knowledge_company_overview() -> str:
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="knowledge-mcp")
     parser.add_argument("--vault", help="Path to the Markdown vault (or KNOWLEDGE_VAULT)")
+    parser.add_argument("--config", help="Path to YAML configuration (or KNOWLEDGE_MCP_CONFIG)")
     arguments = parser.parse_args(argv)
     root = arguments.vault if arguments.vault is not None else os.environ.get("KNOWLEDGE_VAULT", "")
     if not root.strip():
@@ -350,6 +353,8 @@ def main(argv: list[str] | None = None) -> None:
     if not vault.is_dir():
         parser.exit(2, "knowledge-mcp: vault must be an existing directory\n")
     os.environ["KNOWLEDGE_VAULT"] = str(vault)
+    if arguments.config is not None:
+        os.environ["KNOWLEDGE_MCP_CONFIG"] = str(Path(arguments.config).expanduser().resolve())
     mcp.run(transport="stdio")
 
 

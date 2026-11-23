@@ -15,3 +15,18 @@ uv run python evals/run.py --mode bm25 --output evals/public-bm25.json
 
 私有集使用同一个脚本，传入 `--vault <vault> --questions <仓库外的问题.jsonl>`，加 `--summary-only` 避免输出问题明细。脚本只读取 vault，不做 Git 操作或写入。
 问题格式：`{"id":"q1","scope":"personal","query":"问题","expected_paths":["personal/note.md"],"type":"paraphrase"}`。
+
+公开集重排（默认模型，CPU 4 线程，batch size 8）：
+
+```sh
+uv run --extra rerank python evals/run.py --mode rerank --output evals/public-rerank.json
+```
+
+一次复现两组公开结果：
+
+```sh
+uv run --extra rerank python evals/compare.py
+```
+
+`--model` 可切换 fastembed 支持的交叉编码器；评测加载或推理失败时直接终止，不把回退结果记成重排成绩。题目和语料未改动，汇总中的 SHA-256 可校验题目一致。
+MRR 在 JSON 中命名为 `mrr@10`，因为只检索前 10 条，不把第 11–30 名计为正确。

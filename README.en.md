@@ -128,3 +128,26 @@ Open an Issue describing the problem; install development dependencies and run `
 ## License
 
 [MIT](LICENSE).
+
+## Optional local reranking
+
+BM25 remains the default. Install `pip install 'knowledge-mcp[rerank]'`, then start
+`knowledge-mcp --vault <path> --config /absolute/path/rerank.yaml`:
+
+```yaml
+rerank:
+  enabled: true
+  model: BAAI/bge-reranker-base
+  top_n: 30
+```
+
+From a checkout: `uv run --extra rerank knowledge-mcp --vault <path> --config examples/rerank.yaml`.
+`KNOWLEDGE_MCP_CONFIG` is the equivalent environment variable; the CLI flag takes precedence.
+`top_n` accepts 1–100. If `limit` is larger, the pool grows to `limit`.
+A fastembed ONNX cross-encoder scores the title and matched snippet on CPU; successful
+results add `rerank_score` (a model score, not a probability). No vector database,
+PyTorch or online inference API is used. The first run downloads roughly 1.1 GB;
+set `FASTEMBED_CACHE_PATH` to keep a persistent model cache. Models are reused across
+searches. Missing dependencies and model/inference failures log a warning and fall
+back to BM25 until process restart. Invalid YAML configuration fails explicitly.
+See [the evaluation report](evals/REPORT.md) for measured gains, regressions and latency.

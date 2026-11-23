@@ -49,6 +49,10 @@ def main() -> None:
     args = parser.parse_args()
     if args.repeats < 1:
         parser.error("repeats must be positive")
+    if args.output.resolve().is_relative_to(args.vault.resolve()):
+        parser.error("evaluation output must be outside the read-only vault")
+    if args.output.resolve() == args.questions.resolve():
+        parser.error("evaluation output must not overwrite the question set")
     questions = load_questions(args.questions, args.vault)
     started = time.perf_counter()
     if args.mode == "rerank":

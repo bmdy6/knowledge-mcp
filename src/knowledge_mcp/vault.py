@@ -15,6 +15,7 @@ import yaml
 
 from .locking import vault_write_lock, WriteLockTimeout
 from .ranking import overlaps_enough, query_bigrams, Ranker, topic_of
+from .reranking import RerankConfig, get_reranker
 
 Scope = Literal["personal", "company"]
 SCOPE_ROOTS: dict[str, str] = {
@@ -191,6 +192,7 @@ class SearchResult:
     line_end: int
     title: str
     snippet: str
+    rerank_score: float | None = None
 
 
 _SECTION_HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
@@ -292,8 +294,9 @@ class ValidationFinding:
 class Vault:
     """Filesystem-backed vault with explicit scope and path checks."""
 
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, *, rerank: RerankConfig | None = None):
         self.root = root.resolve()
+        self.rerank = rerank or RerankConfig()
 
     def _document_path(
         self, scope: str, relative_path: str, *, include_archive: bool = False
@@ -480,6 +483,48 @@ class Vault:
         return fallback
 
     def search(
+        self,
+        scope: str,
+        query: str,
+        *,
+        limit: int = 20,
+        include_archive: bool = False,
+        diagnostics: list[dict[str, str]] | None = None,
+    ) -> list[SearchResult]:
+        if not self.rerank.enabled:
+            return self._search_bm25(scope, query, limit=limit,
+                                     include_archive=include_archive, diagnostics=diagnostics)
+        # Validate the caller's limit before widening the candidate pool.
+        if scope not in SCOPE_ROOTS:
+            raise InvalidScopeError(f"Unsupported scope: {scope}")
+        if not query.strip():
+            return []
+        if not 1 <= limit <= 100:
+            raise ValueError("limit must be between 1 and 100")
+        ranker = get_reranker(self.rerank)
+        # Failed/missing models do not repeat downloads on every MCP request.
+        if ranker.failed:
+            return self._search_bm25(scope, query, limit=limit,
+                                     include_archive=include_archive, diagnostics=diagnostics)
+        pending: list[dict[str, str]] = []
+        results = self._search_bm25(
+            scope, query, limit=max(limit, self.rerank.top_n),
+            include_archive=include_archive, diagnostics=pending)
+        reranked = ranker.rerank(query, results)
+        if reranked is None:
+            # Do not truncate the widened pool as a fallback: original BM25
+            # applies its recency tie-break after selecting the requested limit.
+            return self._search_bm25(scope, query, limit=limit,
+                                     include_archive=include_archive, diagnostics=diagnostics)
+        if diagnostics is not None:
+            diagnostics.extend(pending)
+        else:
+            for item in pending:
+                warnings.warn(f"Partial search: skipped {item['path']!r} ({item['code']})",
+                              RuntimeWarning, stacklevel=2)
+        return reranked[:limit]
+
+    def _search_bm25(
         self,
         scope: str,
         query: str,
@@ -1236,7 +1281,10 @@ class Vault:
 
     @staticmethod
     def serialize_result(result: SearchResult) -> dict[str, object]:
-        return asdict(result)
+        serialized = asdict(result)
+        if result.rerank_score is None:
+            serialized.pop("rerank_score")
+        return serialized
 
     @staticmethod
     def serialize_finding(finding: ValidationFinding) -> dict[str, str]:
