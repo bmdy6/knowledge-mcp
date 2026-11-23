@@ -128,3 +128,29 @@ startup_timeout_sec = 60
 ## 许可证
 
 [MIT](LICENSE)。
+
+## 可选的本地模型重排
+
+默认关闭，仍使用原有 BM25。安装可选依赖后，把下面的 YAML 保存到知识库外的配置文件（如 `rerank.yaml`），并重启 MCP 服务：
+
+```sh
+pip install 'knowledge-mcp[rerank]'
+knowledge-mcp --vault <知识库路径> --config /绝对路径/rerank.yaml
+```
+
+从 Git 仓库试用可执行 `uv run --extra rerank knowledge-mcp --vault <路径> --config examples/rerank.yaml`。
+
+```yaml
+rerank:
+  enabled: true
+  model: BAAI/bge-reranker-base
+  top_n: 30
+```
+
+客户端的启动参数也可添加 `--config`，或设置环境变量 `KNOWLEDGE_MCP_CONFIG`（命令行优先）。`top_n` 取值 1–100；请求的 `limit` 更大时，候选数扩大为 `limit`，保证返回数量与分数完整。
+BM25 先取候选，再用 fastembed 的 ONNX 交叉编码器在 CPU 上对“标题 + 命中片段”打分；成功时结果增加 `rerank_score`，它不是概率。没有向量库、PyTorch 或在线推理 API。
+
+首次启用需要下载约 1.1 GB 模型，缓存位于 fastembed 的系统临时目录（可用 `FASTEMBED_CACHE_PATH` 指定持久目录）。加载后复用模型；缺少依赖、模型加载或推理失败会记录警告并回退 BM25，重启进程后重试。YAML 配置错误会直接报错，以免悄悄忽略拼写错误。
+重排会增加 CPU 延迟，而且无法找回 BM25 候选池外的答案；公开集与私有集的实际效果、退步题型和延迟见 [评测报告](evals/REPORT.md)。
+
+本次各 40 题的评测：公开集 Recall@1 从 67.5% 升到 80.0%，私有集从 55.0% 升到 57.5%，但私有 Recall@5 从 92.5% 降到 90.0%。公开 p50 为 3.31 → 24.07 ms，私有 p50 为 445.12 → 2534.87 ms；建议先用自己的问题集评估，再决定是否开启。

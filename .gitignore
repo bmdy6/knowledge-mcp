@@ -7,3 +7,7 @@ build/
 .knowledge-mcp.lock
 .env
 node_modules/
+# Local evaluation questions and task artifacts may contain private vault data.
+private-eval.jsonl
+result.md
+.rerank-eval/

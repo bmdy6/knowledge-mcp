@@ -1,0 +1,28 @@
+{
+  "mode": "bm25",
+  "model": null,
+  "top_n": null,
+  "questions": 40,
+  "questions_sha256": "72980f18c8281ae6fd1cf29ab66b3462e963361cf6a704cc1e7876d9e5666395",
+  "repeats": 3,
+  "warmup_rounds": 1,
+  "load_ms": 0.012541015166789293,
+  "python": "3.13.7",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "summary": {
+    "recall@1": 0.55,
+    "recall@5": 0.925,
+    "recall@10": 0.975,
+    "mrr@10": 0.6983333333333334,
+    "p50_ms": 445.117729017511,
+    "p95_ms": 698.3527395903366
+  },
+  "types": {
+    "colloquial": 10,
+    "concept": 10,
+    "paraphrase": 10,
+    "technical": 10
+  },
+  "corpus_documents": 228,
+  "corpus_manifest_sha256": "18e2a972b74f19150aef77fff4c34ca2c3ddf80547649a7b571131cdb4d6256c"
+}

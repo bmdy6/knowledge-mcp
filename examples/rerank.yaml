@@ -1,0 +1,5 @@
+# Pass this file with --config; configuration is never written to the vault.
+rerank:
+  enabled: true
+  model: BAAI/bge-reranker-base
+  top_n: 30
