@@ -192,7 +192,7 @@ def test_rerank_preserves_partial_diagnostics(corpus, monkeypatch):
 
 def test_input_is_bounded_but_returned_title_is_preserved(corpus, monkeypatch):
     long_title = '队列' * 1000
-    (corpus / 'personal/long.md').write_text(f'# {long_title}\n\n队列\n')
+    (corpus / 'personal/long.md').write_text(f'# {long_title}\n\n队列\n', encoding='utf-8')
     observed = []
     class Encoder:
         def rerank(self, query, docs, **kwargs):
