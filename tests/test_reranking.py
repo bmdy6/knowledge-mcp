@@ -166,6 +166,7 @@ def test_empty_config_is_default(tmp_path):
 def test_config_cli_overrides_environment(corpus, tmp_path, monkeypatch):
     config_file = tmp_path / 'settings.yml'
     config_file.write_text('rerank:\n  top_n: 12\n')
+    monkeypatch.setenv('KNOWLEDGE_VAULT', str(corpus))
     monkeypatch.setenv('KNOWLEDGE_MCP_CONFIG', 'missing.yml')
     found = []
     monkeypatch.setattr(server.mcp, 'run', lambda **_: found.append(server.get_vault().rerank))
